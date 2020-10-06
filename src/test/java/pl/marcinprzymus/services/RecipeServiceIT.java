@@ -1,23 +1,26 @@
 package pl.marcinprzymus.services;
 
-import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
+import pl.marcinprzymus.bootstrap.RecipeBootstrap;
 import pl.marcinprzymus.commands.RecipeCommand;
 import pl.marcinprzymus.converters.RecipeCommandToRecipe;
 import pl.marcinprzymus.converters.RecipeToRecipeCommand;
 import pl.marcinprzymus.domain.Recipe;
+import pl.marcinprzymus.repositories.CategoryRepository;
 import pl.marcinprzymus.repositories.RecipeRepository;
+import pl.marcinprzymus.repositories.UnitOfMeasureRepository;
 
 import static org.junit.Assert.assertEquals;
 
-@Ignore
 @RunWith(SpringRunner.class)
-@DataMongoTest
+@SpringBootTest
 public class RecipeServiceIT {
 
     public static final String NEW_DESCRIPTION = "New Description";
@@ -34,7 +37,6 @@ public class RecipeServiceIT {
     @Autowired
     RecipeToRecipeCommand recipeToRecipeCommand;
 
-    @Transactional
     @Test
     public void testSaveOfDescription() throws Exception {
         //given
