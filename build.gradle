@@ -45,6 +45,10 @@ dependencies {
 }
 
 //export test coverage
+test {
+	useJUnitPlatform()
+}
+
 jacocoTestReport {
     reports {
         xml.enabled true
