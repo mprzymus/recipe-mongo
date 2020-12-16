@@ -43,11 +43,6 @@ public class RecipeBootstrap implements ApplicationListener<ContextRefreshedEven
         loadUom();
         recipeRepository.saveAll(getRecipes());
         log.debug("Loading Bootstrap Data");
-
-        log.error(unitOfMeasureReactiveRepository.count().block().toString());
-        log.error(categoryReactiveRepository.count().block().toString());
-        log.error(recipeReactiveRepository.count().block().toString());
-
     }
 
     private void loadCategories(){
