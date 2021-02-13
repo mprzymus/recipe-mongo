@@ -29,14 +29,14 @@ public class IngredientServiceImpl implements IngredientService {
     @Override
     public Mono<IngredientCommand> findByRecipeIdAndIngredientId(String recipeId, String ingredientId) {
 
-        return recipeReactiveRepository.findById(recipeId)
-                .map(recipe -> recipe.getIngredients()
-                        .stream()
-                        .filter(ingredient -> ingredient.getId().equalsIgnoreCase(ingredientId))
-                        .findFirst())
-                .filter(Optional::isPresent)
+        return recipeReactiveRepository
+                .findById(recipeId)
+                .flatMapIterable(Recipe::getIngredients)
+                .filter(ingredient -> ingredient.getId().equalsIgnoreCase(ingredientId))
+                .single()
                 .map(ingredient -> {
-                    var command = ingredientToIngredientCommand.convert(ingredient.get());
+                    var command = ingredientToIngredientCommand.convert(ingredient);
+                    assert command != null;
                     command.setRecipeId(recipeId);
                     return command;
                 });
@@ -67,7 +67,7 @@ public class IngredientServiceImpl implements IngredientService {
                 ingredientFound.setUom(unitOfMeasureRepository
                         .findById(command.getUom().getId()).blockOptional()
                         .orElseThrow(() -> new RuntimeException("UOM NOT FOUND"))); //todo address this
-                if (ingredientFound.getUom() == null){
+                if (ingredientFound.getUom() == null) {
                     throw new RuntimeException("UOM NOT FOUND");
                 }
             } else {
