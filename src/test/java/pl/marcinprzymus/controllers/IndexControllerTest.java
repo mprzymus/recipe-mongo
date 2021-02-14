@@ -13,6 +13,7 @@ import org.springframework.ui.Model;
 import reactor.core.publisher.Flux;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -43,6 +44,8 @@ public class IndexControllerTest {
 
     @Test
     public void testMockMVC() throws Exception {
+        when(recipeService.getRecipes()).thenReturn(Flux.empty());
+
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
         mockMvc.perform(get("/"))
@@ -59,7 +62,7 @@ public class IndexControllerTest {
 
         when(recipeService.getRecipes()).thenReturn(Flux.just(new Recipe(), recipe));
 
-        ArgumentCaptor<Flux<Recipe>> argumentCaptor = ArgumentCaptor.forClass(Flux.class);
+        ArgumentCaptor<List<Recipe>> argumentCaptor = ArgumentCaptor.forClass(List.class);
 
         //when
         String viewName = controller.getIndexPage(model);
@@ -70,7 +73,7 @@ public class IndexControllerTest {
         verify(recipeService, times(1)).getRecipes();
         verify(model, times(1)).addAttribute(eq("recipes"), argumentCaptor.capture());
         var setInController = argumentCaptor.getValue();
-        assertEquals(2, setInController.count().block().longValue());
+        assertEquals(2, setInController.size());
     }
 
 }
