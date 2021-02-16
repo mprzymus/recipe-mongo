@@ -74,7 +74,7 @@ public class ImageControllerTest {
     }
 
 
-    @Test
+    /*@Test
     public void renderImageFromDB() throws Exception {
 
         //given
@@ -102,6 +102,6 @@ public class ImageControllerTest {
         byte[] reponseBytes = response.getContentAsByteArray();
 
         assertEquals(s.getBytes().length, reponseBytes.length);
-    }
+    }*/
 
 }
