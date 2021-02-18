@@ -27,7 +27,7 @@ public class RecipeController {
     private final RecipeService recipeService;
 
     @GetMapping("/recipe/{id}/show")
-    public String showById(@PathVariable String id, Model model){
+    public String showById(@PathVariable String id, Model model) {
 
         model.addAttribute("recipe", recipeService.findById(id));
 
@@ -35,28 +35,33 @@ public class RecipeController {
     }
 
     @GetMapping("recipe/new")
-    public String newRecipe(Model model){
+    public String newRecipe(Model model) {
         model.addAttribute("recipe", new RecipeCommand());
 
         return "recipe/recipeform";
     }
 
     @GetMapping("recipe/{id}/update")
-    public String updateRecipe(@PathVariable String id, Model model){
+    public String updateRecipe(@PathVariable String id, Model model) {
         model.addAttribute("recipe", recipeService.findCommandById(id));
         return RECIPE_RECIPEFORM_URL;
     }
 
     @PostMapping("recipe")
-    public Mono<String> saveOrUpdate(@Valid @ModelAttribute("recipe") Mono<RecipeCommand> command){
+    public Mono<String> saveOrUpdate(@Valid @ModelAttribute("recipe") Mono<RecipeCommand> command) {
         return command.flatMap(recipeService::saveRecipeCommand)
-                .map(recipe -> "redirect:/recipe/" + recipe.getId() + "/show")
+                .map(recipe -> {
+                    if (recipe.getId() != null && !recipe.getId().isBlank())
+                        return "redirect:/recipe/" + recipe.getId() + "/show";
+                    else
+                        return "redirect:/";
+                })
                 .doOnError(thr -> log.error("Saving validation error"))
                 .onErrorResume(WebExchangeBindException.class, thr -> Mono.just(RECIPE_RECIPEFORM_URL));
     }
 
     @GetMapping("recipe/{id}/delete")
-    public Mono<String> deleteById(@PathVariable String id){
+    public Mono<String> deleteById(@PathVariable String id) {
 
         log.debug("Deleting id: " + id);
 
@@ -65,7 +70,7 @@ public class RecipeController {
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler({NotFoundException.class, TemplateInputException.class})
-    public String handleNotFound(Exception exception, Model model){
+    public String handleNotFound(Exception exception, Model model) {
         log.error("Handling not found exception");
         log.error(exception.getMessage());
 
