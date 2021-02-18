@@ -88,9 +88,8 @@ public class IngredientServiceImpl implements IngredientService {
 
         log.debug("Deleting ingredient: " + recipeId + ":" + idToDelete);
 
-        Recipe recipe = recipeReactiveRepository.findById(recipeId).block();
+        return recipeReactiveRepository.findById(recipeId).flatMap(recipe -> {
 
-        if (recipe != null) {
             log.debug("found recipe");
 
             Optional<Ingredient> ingredientOptional = recipe
@@ -103,11 +102,10 @@ public class IngredientServiceImpl implements IngredientService {
                 log.debug("found Ingredient");
 
                 recipe.getIngredients().remove(ingredientOptional.get());
-                recipeReactiveRepository.save(recipe).block();
+
+                return recipeReactiveRepository.save(recipe).then();
             }
-        } else {
-            log.debug("Recipe Id Not found. Id:" + recipeId);
-        }
-        return Mono.empty();
+            return Mono.empty();
+        });
     }
 }

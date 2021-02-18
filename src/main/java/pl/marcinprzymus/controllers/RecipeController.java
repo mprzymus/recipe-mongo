@@ -56,12 +56,11 @@ public class RecipeController {
     }
 
     @GetMapping("recipe/{id}/delete")
-    public String deleteById(@PathVariable String id){
+    public Mono<String> deleteById(@PathVariable String id){
 
         log.debug("Deleting id: " + id);
 
-        recipeService.deleteById(id);
-        return "redirect:/";
+        return recipeService.deleteById(id).thenReturn("redirect:/");
     }
 
     @ResponseStatus(HttpStatus.NOT_FOUND)

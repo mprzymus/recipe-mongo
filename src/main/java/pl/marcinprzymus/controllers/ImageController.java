@@ -1,21 +1,15 @@
 package pl.marcinprzymus.controllers;
 
-import pl.marcinprzymus.commands.RecipeCommand;
-import pl.marcinprzymus.services.ImageService;
-import pl.marcinprzymus.services.RecipeService;
-//import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
-
-//import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import pl.marcinprzymus.services.ImageService;
+import pl.marcinprzymus.services.RecipeService;
+import reactor.core.publisher.Mono;
 
 /**
  * Created by jt on 7/3/17.
@@ -33,17 +27,16 @@ public class ImageController {
 
     @GetMapping("recipe/{id}/image")
     public String showUploadForm(@PathVariable String id, Model model){
-        model.addAttribute("recipe", recipeService.findCommandById(id).block());
+        model.addAttribute("recipe", recipeService.findCommandById(id));
 
         return "recipe/imageuploadform";
     }
 
-    @PostMapping("recipe/{id}/image")
-    public String handleImagePost(@PathVariable String id, @RequestParam("imagefile") MultipartFile file){
+    @PostMapping(path = "recipe/{id}/image", consumes = {"multipart/form-data"})
+    public Mono<String> handleImagePost(@PathVariable String id, @RequestPart("imagefile") MultipartFile file){
 
-        imageService.saveImageFile(id, file).block();
-
-        return "redirect:/recipe/" + id + "/show";
+        return imageService.saveImageFile(id, file)
+                .thenReturn("redirect:/recipe/" + id + "/show");
     }
 
     /*@GetMapping("recipe/{id}/recipeimage")

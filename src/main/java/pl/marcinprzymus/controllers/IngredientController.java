@@ -1,5 +1,6 @@
 package pl.marcinprzymus.controllers;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import pl.marcinprzymus.commands.IngredientCommand;
 import pl.marcinprzymus.commands.RecipeCommand;
@@ -21,18 +22,13 @@ import javax.validation.Valid;
 
 @Slf4j
 @Controller
+@RequiredArgsConstructor
 public class IngredientController {
 
     public static final String RECIPE_INGREDIENT_INGREDIENTFORM = "recipe/ingredient/ingredientform";
     private final IngredientService ingredientService;
     private final RecipeService recipeService;
     private final UnitOfMeasureService unitOfMeasureService;
-
-    public IngredientController(IngredientService ingredientService, RecipeService recipeService, UnitOfMeasureService unitOfMeasureService) {
-        this.ingredientService = ingredientService;
-        this.recipeService = recipeService;
-        this.unitOfMeasureService = unitOfMeasureService;
-    }
 
     @GetMapping("/recipe/{recipeId}/ingredients")
     public String listIngredients(@PathVariable String recipeId, Model model) {
@@ -79,21 +75,20 @@ public class IngredientController {
     public Mono<String> saveOrUpdate(@Valid @ModelAttribute("ingredient") Mono<IngredientCommand> command, Model model) {
         return command
                 .flatMap(ingredientService::saveIngredientCommand)
-                .map(savedCommand -> "redirect:/recipe/" + savedCommand.getRecipeId() + "/ingredient/" + savedCommand.getId() + "/show")
-                .doOnError(thr -> {
-                    log.error("Saving ingredient validation error");
-                })
+                .map(
+                        savedCommand -> "redirect:/recipe/" + savedCommand.getRecipeId()
+                                + "/ingredient/" + savedCommand.getId() + "/show"
+                )
+                .doOnError(thr -> log.error("Saving ingredient validation error"))
                 .onErrorResume(WebExchangeBindException.class, thr -> Mono.just(RECIPE_INGREDIENT_INGREDIENTFORM));
     }
 
     @GetMapping("recipe/{recipeId}/ingredient/{id}/delete")
-    public String deleteIngredient(@PathVariable String recipeId,
-                                   @PathVariable String id) {
+    public Mono<String> deleteIngredient(@PathVariable String recipeId, @PathVariable String id) {
 
         log.debug("deleting ingredient id:" + id);
-        ingredientService.deleteById(recipeId, id).block();
-
-        return "redirect:/recipe/" + recipeId + "/ingredients";
+        return ingredientService.deleteById(recipeId, id)
+                .thenReturn("redirect:/recipe/" + recipeId + "/ingredients");
     }
 
     @ModelAttribute("uomList")
