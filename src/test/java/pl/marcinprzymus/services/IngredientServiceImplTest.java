@@ -1,7 +1,7 @@
 package pl.marcinprzymus.services;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import pl.marcinprzymus.commands.IngredientCommand;
@@ -17,7 +17,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -41,7 +42,7 @@ public class IngredientServiceImplTest {
         this.ingredientCommandToIngredient = new IngredientCommandToIngredient(new UnitOfMeasureCommandToUnitOfMeasure());
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
@@ -129,7 +130,7 @@ public class IngredientServiceImplTest {
         when(recipeReactiveRepository.save(any())).thenReturn(Mono.just(savedRecipe));
 
         //when
-        ingredientService.deleteById("1", "3");
+        ingredientService.deleteById("1", "3").block();
 
         //then
         verify(recipeReactiveRepository, times(1)).findById(anyString());

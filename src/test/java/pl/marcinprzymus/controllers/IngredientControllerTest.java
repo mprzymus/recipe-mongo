@@ -1,13 +1,21 @@
 package pl.marcinprzymus.controllers;
 
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.web.reactive.server.WebTestClient;
 import pl.marcinprzymus.commands.IngredientCommand;
 import pl.marcinprzymus.commands.RecipeCommand;
 import pl.marcinprzymus.commands.UnitOfMeasureCommand;
 import pl.marcinprzymus.services.IngredientService;
 import pl.marcinprzymus.services.RecipeService;
 import pl.marcinprzymus.services.UnitOfMeasureService;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
@@ -18,106 +26,109 @@ import reactor.core.publisher.Mono;
 
 import java.util.HashSet;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@ExtendWith(SpringExtension.class)
+@WebFluxTest(IngredientController.class)
+@Import(ThymeleafAutoConfiguration.class)
 public class IngredientControllerTest {
 
-    @Mock
+    @MockBean
     IngredientService ingredientService;
 
-    @Mock
+    @MockBean
     UnitOfMeasureService unitOfMeasureService;
 
-    @Mock
+    @MockBean
     RecipeService recipeService;
 
-    IngredientController controller;
-
-    MockMvc mockMvc;
-
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
-        controller = new IngredientController(ingredientService, recipeService, unitOfMeasureService);
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
-    }
+    @Autowired
+    private WebTestClient webTestClient;
 
     @Test
-    public void testListIngredients() throws Exception {
+    public void testListIngredients() {
         //given
         RecipeCommand recipeCommand = new RecipeCommand();
         when(recipeService.findCommandById(anyString())).thenReturn(Mono.just(recipeCommand));
 
         //when
-        mockMvc.perform(get("/recipe/1/ingredients"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("recipe/ingredient/list"))
-                .andExpect(model().attributeExists("recipe"));
+        webTestClient.get().uri("/recipe/1/ingredients").exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .consumeWith(response -> assertFalse(response.getResponseBody().isEmpty()));
 
         //then
         verify(recipeService, times(1)).findCommandById(anyString());
     }
 
     @Test
-    public void testShowIngredient() throws Exception {
+    public void testShowIngredient() {
         //given
-        Mono<IngredientCommand> ingredientCommand = Mono.just(new IngredientCommand());
+        var ingredient = new IngredientCommand();
+        ingredient.setUom(new UnitOfMeasureCommand());
+        Mono<IngredientCommand> ingredientCommandMono = Mono.just(ingredient);
 
         //when
-        when(ingredientService.findByRecipeIdAndIngredientId(anyString(), anyString())).thenReturn(ingredientCommand);
+        when(ingredientService.findByRecipeIdAndIngredientId(anyString(), anyString())).thenReturn(ingredientCommandMono);
 
         //then
-        mockMvc.perform(get("/recipe/1/ingredient/2/show"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("recipe/ingredient/show"))
-                .andExpect(model().attributeExists("ingredient"));
+        webTestClient.get().uri("/recipe/1/ingredient/2/show").exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .consumeWith(response -> assertFalse(response.getResponseBody().isEmpty()));
+        ;
     }
 
     @Test
-    public void testNewIngredientForm() throws Exception {
+    public void testNewIngredientForm() {
         //given
         RecipeCommand recipeCommand = new RecipeCommand();
         recipeCommand.setId("1");
-
+        var uom = new UnitOfMeasureCommand();
+        uom.setId("1");
+        uom.setDescription("desc");
         //when
         when(recipeService.findCommandById(anyString())).thenReturn(Mono.just(recipeCommand));
-        when(unitOfMeasureService.listAllUoms()).thenReturn(Flux.just(new UnitOfMeasureCommand()));
+        when(unitOfMeasureService.listAllUoms()).thenReturn(Flux.just(uom));
 
         //then
-        mockMvc.perform(get("/recipe/1/ingredient/new"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("recipe/ingredient/ingredientform"))
-                .andExpect(model().attributeExists("ingredient"))
-                .andExpect(model().attributeExists("uomList"));
+        webTestClient.get().uri("/recipe/1/ingredient/new").exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .consumeWith(response -> assertFalse(response.getResponseBody().isEmpty()));
 
         verify(recipeService, times(1)).findCommandById(anyString());
 
     }
 
     @Test
-    public void testUpdateIngredientForm() throws Exception {
+    public void testUpdateIngredientForm() {
         //given
-        Mono<IngredientCommand> ingredientCommand = Mono.just(new IngredientCommand());
+        final String id = "1";
+        var ingredientCommand = new IngredientCommand();
+        ingredientCommand.setId(id);
+        var uom = new UnitOfMeasureCommand();
+        uom.setId(id);
+        ingredientCommand.setUom(uom);
 
         //when
-        when(ingredientService.findByRecipeIdAndIngredientId(anyString(), anyString())).thenReturn(ingredientCommand);
-        when(unitOfMeasureService.listAllUoms()).thenReturn(Flux.just(new UnitOfMeasureCommand()));
+        when(ingredientService.findByRecipeIdAndIngredientId(anyString(), anyString())).thenReturn(Mono.just(ingredientCommand));
+        when(unitOfMeasureService.listAllUoms()).thenReturn(Flux.just(uom));
 
         //then
-        mockMvc.perform(get("/recipe/1/ingredient/2/update"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("recipe/ingredient/ingredientform"))
-                .andExpect(model().attributeExists("ingredient"))
-                .andExpect(model().attributeExists("uomList"));
+        webTestClient.get().uri("/recipe/1/ingredient/2/update").exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .consumeWith(response -> assertFalse(response.getResponseBody().isEmpty()));
     }
 
     @Test
-    public void testSaveOrUpdate() throws Exception {
+    public void testSaveOrUpdate() {
         //given
         IngredientCommand command = new IngredientCommand();
         command.setId("3");
@@ -128,13 +139,8 @@ public class IngredientControllerTest {
         when(ingredientService.saveIngredientCommand(any())).thenReturn(mono);
 
         //then
-        mockMvc.perform(post("/recipe/2/ingredient")
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .param("id", "")
-                .param("description", "some string")
-        )
-                .andExpect(status().is3xxRedirection())
-                .andExpect(view().name("redirect:/recipe/2/ingredient/3/show"));
+        webTestClient.post().uri("/recipe/2/ingredient").exchange()
+                .expectStatus().isOk();
 
     }
 
@@ -143,11 +149,8 @@ public class IngredientControllerTest {
         when(ingredientService.deleteById(anyString(), anyString())).thenReturn(Mono.empty());
 
         //then
-        mockMvc.perform(get("/recipe/2/ingredient/3/delete")
-        )
-                .andExpect(status().is3xxRedirection())
-                .andExpect(view().name("redirect:/recipe/2/ingredients"));
-
+        webTestClient.get().uri("/recipe/2/ingredient/3/delete").exchange()
+                .expectStatus().is3xxRedirection();
         verify(ingredientService, times(1)).deleteById(anyString(), anyString());
 
     }

@@ -8,7 +8,6 @@ import pl.marcinprzymus.converters.IngredientCommandToIngredient;
 import pl.marcinprzymus.converters.IngredientToIngredientCommand;
 import pl.marcinprzymus.domain.Ingredient;
 import pl.marcinprzymus.domain.Recipe;
-import pl.marcinprzymus.repositories.RecipeRepository;
 import pl.marcinprzymus.repositories.reactive.RecipeReactiveRepository;
 import pl.marcinprzymus.repositories.reactive.UnitOfMeasureReactiveRepository;
 import reactor.core.publisher.Mono;
@@ -61,12 +60,13 @@ public class IngredientServiceImpl implements IngredientService {
                             }).orElseGet(() -> {
                         Ingredient newIngredient = ingredientCommandToIngredient.convert(command);
                         ingredientId.set(Objects.requireNonNull(newIngredient).getId());
-                        unitOfMeasureRepository.findById(command.getUom()
-                                .getId())
-                                .flatMap(unitOfMeasure -> {
-                                    newIngredient.setUom(unitOfMeasure);
-                                    return Mono.just(unitOfMeasure);
-                                }).subscribe();
+                        if (command.getUom() != null) {
+                            unitOfMeasureRepository.findById(command.getUom().getId())
+                                    .flatMap(unitOfMeasure -> {
+                                        newIngredient.setUom(unitOfMeasure);
+                                        return Mono.just(unitOfMeasure);
+                                    }).subscribe();
+                        }
                         recipe.addIngredient(newIngredient);
                         return recipe;
                     });
